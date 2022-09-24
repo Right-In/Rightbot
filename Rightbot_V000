@@ -8,7 +8,7 @@ import re
 HOST = "irc.chat.twitch.tv"  # the twitch IRC server
 PORT = 6667  # always use port 6667 (some other valid ports can be found)
 NICK = "rightbot_"  # twitch username, lowercase
-PASS = "oauth:wv6v283blwr8uej9lecmrcmqsf1j3y"  # your twitch OAuth token
+PASS = "oauth:"  # your twitch OAuth token
 CHAN = "#willdt11"  # the channel you want to join
 
 
