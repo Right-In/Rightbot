@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# Created on 23/09/2022
+# Writtent buy Right In
+
+import time
+import socket
+import re
+import tp4000zc
+
+
+HOST = "irc.chat.twitch.tv"  # the twitch IRC server
+PORT = 6667  # always use port 6667 (some other valid ports can be found)
+NICK = "rightbot_"  # twitch username, lowercase
+PASS = "oauth:"  # your twitch OAuth token
+CHAN = ""  # the channel you want to join
+
+MM = 1  # 1 = multimeter opertational / 0 = multimiter not operational
+T = 22.5  # set a nominal temperature
+
+# Network functions
+
+s = socket.socket()
+s.connect((HOST, PORT))
+s.send("PASS {}\r\n".format(PASS).encode("utf-8"))
+s.send("NICK {}\r\n".format(NICK).encode("utf-8"))
+s.send("JOIN {}\r\n".format(CHAN).encode("utf-8"))
+
+def getvalue(port):
+    """
+    Returns the value curently being sent buy the multimeter.\n
+    port -- the serial port to which the multimeter is connected
+    """
+    global MM
+    try:
+        dmm = tp4000zc.Dmm(port)
+        val = dmm.read()
+        dmm.close()
+        return val.numericVal
+    except:
+        MM = 0
+
+def chat(sock, msg):
+    '''
+    Send a chat message to the server.\n
+    sock -- the socket over which to send the message\n
+    msg -- the message to be sent
+    '''
+    sock.send("PRIVMSG {} :{}\r\n".format(CHAN, msg).encode("utf-8"))
+
+HEADERS = { 'client-id' : 'kimne78kx3ncx6brgo4mv6wki5h1ko' }  # I have no freaking clue of what this is all about
+GQL_QUERY = """
+query($login: String) {
+    user(login: $login) {
+        stream {
+            id
+        }
+    }
+}
+"""
+
+# Make sure you prefix the quotes with an 'r'
+CHAT_MSG = re.compile(r"^:\w+!\w+@\w+\.tmi\.twitch\.tv PRIVMSG #\w+ :")
+
+chan = CHAN.replace("#","")
+
+while True:
+    response = s.recv(1024).decode("utf-8")
+    print(response)
+    if response == "PING :tmi.twitch.tv\r\n":
+       s.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
+       print("Pong")
+    else:
+        username = re.search(r"\w+", response).group(0)  # return the entire match
+        message = CHAT_MSG.sub("", response)
+        print(username + ": " + message)
+    if "!hype_dino" in message:
+        chat(s, "/me rezoneHyperave rezoneHyperave rezoneHyperave")
+    if "!gold_dino" in message:
+        chat(s, "/me rezoneGold")
+    if "!love_dino" in message:
+        chat(s, "/me rezoneLoveshake rezoneLoveshake rezoneLoveshake")
+    if "!cute_dino" in message:
+        chat(s, "/me rezoneUwu rezoneUwu rezoneUwu")
+    if "!strong_dino" in message:
+        chat(s, "/me rezoneRave rezoneRave rezoneRave")
+    if "!strong_dino" in message:
+        chat(s, "/me rezoneBoom rezoneBoom rezoneBoom")
+    if "!temperature" in message:
+        T = getvalue("COM3")
+        if MM == 0:
+            chat(s, "/me Le thermocouple de Rightbot n'est pas branché")
+        else:
+            chat(s, "/me La température de l'appartement de Rightbot est actuellement de "+str(T)+" °C")
+    time.sleep(2)
